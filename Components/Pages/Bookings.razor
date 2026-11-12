@@ -8,14 +8,14 @@
 
 <h3>Список бронирований</h3>
 
-@if (!isAuthorized)
+@if (!isAuthorized) @* если пользователь не авторизован, показываем заглушку *@
 {
     <div class="alert alert-danger">Войдите в систему.</div>
     <button class="btn btn-primary" @onclick="GoToLogin">На страницу входа</button>
 }
 else
 {
-    @if (bookings == null || !bookings.Any())
+    @if (bookings == null || !bookings.Any()) @* если список пуст выводим сообщение по ТЗ из приложения *@
     {
         <div class="alert alert-warning">Данных нет</div>
     }
@@ -48,22 +48,20 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery] public string? Login { get; set; }
+    [SupplyParameterFromQuery] public string? Login { get; set; } @* логин передается из формы авторизации через URL  *@
 
     private bool isAuthorized;
     private List<Booking>? bookings;
 
     protected override async Task OnInitializedAsync()
     {
-        // Одна проверка вместо громоздкого if + повторного поиска
         var me = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login);
         isAuthorized = me != null && me.IsBlocked == 0;
 
-        if (isAuthorized)
+        if (isAuthorized) // если доступ разрешен, загружаем все бронирования из БД
             bookings = await Db.Bookings.ToListAsync();
     }
 
-    // Короткие стрелочные методы для навигации
     private void GoToLogin() => Nav.NavigateTo("/login");
     private void Logout() => Nav.NavigateTo("/login", forceLoad: true);
 }

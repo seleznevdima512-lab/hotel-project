@@ -15,17 +15,16 @@ namespace hotel.Controllers
         [HttpGet]
         public async Task<IActionResult> GetBookings([FromQuery] int? id)
         {
-            if (id <= 0)
+            if (id <= 0) // проверка на некорректный ID 
                 return BadRequest(new { error = "Параметр id должен быть целым положительным числом." });
 
             try
             {
-                var bookings = await _context.Bookings
-                    .Include(b => b.OrganizationCardNavigation)
-                    .Where(b => !id.HasValue || b.BookingNo == id)
+                var bookings = await _context.Bookings // запрос к БД 
+                    .Include(b => b.OrganizationCardNavigation) 
+                    .Where(b => !id.HasValue || b.BookingNo == id) 
                     .ToListAsync();
-
-                return Ok(bookings.Select(b => new BookingResponse
+                return Ok(bookings.Select(b => new BookingResponse // формируем ответ в нужном формате
                 {
                     Id = b.BookingNo,
                     Caption = $"{b.OrganizationCardNavigation?.Name ?? "Неизвестная организация"} - {b.Person}",
@@ -35,7 +34,7 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = $"Внутренняя ошибка сервера: {ex.Message}" });
+                return StatusCode(500, new { error = $"Внутренняя ошибка сервера: {ex.Message}" }); // обработка внутренней ошибки 
             }
         }
     }

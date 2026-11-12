@@ -8,28 +8,33 @@
 
 <h3>Управление пользователями</h3>
 
-@if (!isAdmin)
+@if (!isAdmin) @* если текущий пользователь не админ, показываем ошибку *@
+
 {
     <div class="alert alert-danger">Доступ запрещён.</div>
     <button class="btn btn-primary" @onclick="GoToLogin">На страницу входа</button>
 }
 else
 {
-    @if (message != null)
+
+    @if (message != null) @* вывод уведомлений*@
     {
-         <div class="alert alert-info">@message</div>
+        <div class="alert alert-info">@message</div>
     }
 
     <h5>@(editId == null ? "Добавить" : "Редактировать")</h5>
     <div class="row mb-3">
-        <div class="col"><input class="form-control" placeholder="Логин" @bind="editLogin" disabled="@(editId != null)" /></div>
+
+        <div class="col"><input class="form-control" placeholder="Логин" @bind="editLogin" disabled="@(editId != null)" /></div> @* поле логин блокируется, если мы редактируем существующего юзера *@
         <div class="col"><input class="form-control" placeholder="Пароль" @bind="editPassword" /></div>
+
         <div class="col">
             <select class="form-select" @bind="editRole">
                 <option value="User">Пользователь</option>
                 <option value="Admin">Администратор</option>
             </select>
         </div>
+
         <div class="col">
             <button class="btn btn-success" @onclick="SaveUser">@(editId == null ? "Добавить" : "Сохранить")</button>
             @if (editId != null)
@@ -39,6 +44,7 @@ else
         </div>
     </div>
 
+    @* список всех пользователей *@
     <table class="table table-striped">
         <thead><tr><th>ID</th><th>Логин</th><th>Роль</th><th>Статус</th><th>Действия</th></tr></thead>
         <tbody>
@@ -48,7 +54,7 @@ else
                     <td>@u.UserId</td>
                     <td>@u.Login</td>
                     <td>@u.Role</td>
-                    <td>@(u.IsBlocked != 0 ? "Заблокирован" : "Активен")</td>
+                    <td>@(u.IsBlocked != 0 ? "Заблокирован" : "Активен")</td> @* если IsBlocked != 0,то выводим эти значения  *@
                     <td>
                         <button class="btn btn-sm btn-primary" @onclick="() => StartEdit(u)">Изменить</button>
                         @if (u.IsBlocked != 0)
@@ -65,11 +71,11 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery] public string? Login { get; set; }
+    [SupplyParameterFromQuery] public string? Login { get; set; } // получаем логин из URL 
 
     private bool isAdmin;
-    private List<User> users = new();
-    private string? message;
+    private List<User> users = new(); // список для таблицы
+    private string? message; // текст уведомления
 
     private int? editId;
     private string? editLogin, editPassword;
@@ -77,21 +83,22 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var me = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login);
-        isAdmin = me?.Role == "Admin" && me.IsBlocked == 0;
-        if (isAdmin) users = await Db.Users.ToListAsync();
+        var me = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login); // ищем текущего пользователя в бд по логину из URL
+
+        isAdmin = me?.Role == "Admin" && me.IsBlocked == 0; // проверка существует ли данный пользователь и админ ли он
+        if (isAdmin) users = await Db.Users.ToListAsync(); // если это админ загружаем список всех юзеров для таблицы
     }
 
-    private void GoToLogin() => Nav.NavigateTo("/login");
+    private void GoToLogin() => Nav.NavigateTo("/login"); // навигация куда перейти
     private void Logout() => Nav.NavigateTo("/login", forceLoad: true);
 
     private void StartEdit(User u)
     {
-        editId = u.UserId;
-        editLogin = u.Login;
-        editPassword = u.PasswordHash;
-        editRole = u.Role;
-        message = null;
+        editId = u.UserId;             
+        editLogin = u.Login;           
+        editPassword = u.PasswordHash; 
+        editRole = u.Role;            
+        message = null;              
     }
 
     private void CancelEdit()
@@ -110,22 +117,22 @@ else
             return;
         }
 
-        if (editId == null) 
+        if (editId == null)
         {
             if (await Db.Users.AnyAsync(u => u.Login == editLogin))
             {
                 message = "Такой логин уже существует.";
-                return;
+                return; 
             }
-            Db.Users.Add(new User { Login = editLogin, PasswordHash = editPassword, Role = editRole });
+            Db.Users.Add(new User { Login = editLogin, PasswordHash = editPassword, Role = editRole }); // создание нового юзера и добавляем в БД
             message = "Пользователь добавлен.";
         }
-        else 
+        else
         {
-            var u = await Db.Users.FindAsync(editId);
+            var u = await Db.Users.FindAsync(editId); // находим юзера по ID
             if (u != null)
             {
-                u.PasswordHash = editPassword;
+                u.PasswordHash = editPassword; // меняем ему пароль и роль
                 u.Role = editRole;
             }
             message = "Данные обновлены.";
@@ -138,9 +145,10 @@ else
 
     private async Task Unblock(User u)
     {
-        u.IsBlocked = 0;
-        u.FailedAttempts = 0;
-        await Db.SaveChangesAsync();
+        u.IsBlocked = 0;      
+        u.FailedAttempts = 0; 
+
+        await Db.SaveChangesAsync(); 
         users = await Db.Users.ToListAsync();
         message = $"Пользователь {u.Login} разблокирован.";
     }
