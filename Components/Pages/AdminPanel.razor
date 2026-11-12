@@ -4,11 +4,11 @@
 @using hotel.Models
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
-@inject NavigationManager Navigation
+@inject NavigationManager Nav
 
 <h3>Управление пользователями</h3>
 
-@if (!isAuthorized)
+@if (!isAdmin)
 {
     <div class="alert alert-danger">Доступ запрещён. Войдите как администратор.</div>
     <button class="btn btn-primary" @onclick="GoToLogin">На страницу входа</button>
@@ -17,7 +17,7 @@ else
 {
     @if (message != null)
     {
-        <div class="alert alert-info">@message</div>
+         <div class="alert alert-info">@message</div>
     }
 
     <h5>Добавить пользователя</h5>
@@ -36,13 +36,7 @@ else
     <h5>Список пользователей</h5>
     <table class="table table-striped">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>Логин</th>
-                <th>Роль</th>
-                <th>Статус</th>
-                <th>Действия</th>
-            </tr>
+            <tr><th>ID</th><th>Логин</th><th>Роль</th><th>Статус</th><th>Действия</th></tr>
         </thead>
         <tbody>
             @foreach (var u in users)
@@ -76,39 +70,32 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery]
-    public string? Login { get; set; }
+    [SupplyParameterFromQuery] public string? Login { get; set; }
 
-    private bool isAuthorized = false;
+    private bool isAdmin;
     private List<User> users = new();
     private string? message;
-    private string? newLogin;
-    private string? newPassword;
+    private string? newLogin, newPassword;
     private string newRole = "User";
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(Login))
-        {
-            isAuthorized = false;
-            return;
-        }
+        var me = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login);
+        isAdmin = me?.Role == "Admin" && me.IsBlocked == 0;
 
-        var user = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login);
-        isAuthorized = user != null && user.Role == "Admin" && user.IsBlocked == 0;
-
-        if (isAuthorized)
-            users = await Db.Users.ToListAsync();
+        if (isAdmin) await LoadUsers();
     }
 
-    private void GoToLogin()
-    {
-        Navigation.NavigateTo("/login");
-    }
+    private async Task LoadUsers() => users = await Db.Users.ToListAsync();
+
+    private void GoToLogin() => Nav.NavigateTo("/login");
+
+    private void Logout() => Nav.NavigateTo("/login", forceLoad: true);
 
     private async Task AddUser()
     {
         message = null;
+
         if (string.IsNullOrWhiteSpace(newLogin) || string.IsNullOrWhiteSpace(newPassword))
         {
             message = "Заполните логин и пароль.";
@@ -121,36 +108,21 @@ else
             return;
         }
 
-        var user = new User
-            {
-                Login = newLogin,
-                PasswordHash = newPassword,
-                Role = newRole,
-                IsBlocked = 0,
-                FailedAttempts = 0
-            };
-        Db.Users.Add(user);
+        Db.Users.Add(new User { Login = newLogin, PasswordHash = newPassword, Role = newRole });
         await Db.SaveChangesAsync();
 
         message = $"Пользователь {newLogin} добавлен.";
-        newLogin = null;
-        newPassword = null;
+        newLogin = newPassword = null;
         newRole = "User";
-        users = await Db.Users.ToListAsync();
+        await LoadUsers();
     }
 
-    private async Task Unblock(User user)
+    private async Task Unblock(User u)
     {
-        user.IsBlocked = 0;
-        user.FailedAttempts = 0;
-        Db.Users.Update(user);
+        u.IsBlocked = 0;
+        u.FailedAttempts = 0;
         await Db.SaveChangesAsync();
-        message = $"Пользователь {user.Login} разблокирован.";
-        users = await Db.Users.ToListAsync();
-    }
-
-    private void Logout()
-    {
-        Navigation.NavigateTo("/login", forceLoad: true);
+        message = $"Пользователь {u.Login} разблокирован.";
+        await LoadUsers();
     }
 }

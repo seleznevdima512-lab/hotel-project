@@ -4,7 +4,7 @@
 @using hotel.Models
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
-@inject NavigationManager Navigation
+@inject NavigationManager Nav
 
 <h3>Список бронирований</h3>
 
@@ -48,34 +48,22 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery]
-    public string? Login { get; set; }
+    [SupplyParameterFromQuery] public string? Login { get; set; }
 
-    private bool isAuthorized = false;
+    private bool isAuthorized;
     private List<Booking>? bookings;
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(Login))
-        {
-            isAuthorized = false;
-            return;
-        }
-
-        var user = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login);
-        isAuthorized = user != null && user.IsBlocked == 0;
+        // Одна проверка вместо громоздкого if + повторного поиска
+        var me = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login);
+        isAuthorized = me != null && me.IsBlocked == 0;
 
         if (isAuthorized)
             bookings = await Db.Bookings.ToListAsync();
     }
 
-    private void GoToLogin()
-    {
-        Navigation.NavigateTo("/login");
-    }
-
-    private void Logout()
-    {
-        Navigation.NavigateTo("/login", forceLoad: true);
-    }
+    // Короткие стрелочные методы для навигации
+    private void GoToLogin() => Nav.NavigateTo("/login");
+    private void Logout() => Nav.NavigateTo("/login", forceLoad: true);
 }
