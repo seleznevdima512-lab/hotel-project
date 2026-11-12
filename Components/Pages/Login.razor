@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @using hotel.Services
 @inject AuthService AuthService
-@inject NavigationManager Navigation
+@inject NavigationManager Nav
 
 <h3>Авторизация</h3>
 
@@ -45,10 +45,8 @@
 </div>
 
 @code {
-    private string? login;
-    private string? password;
-    private string? errorMessage;
-    private bool isCaptchaSolved = false;
+    private string? login, password, errorMessage;
+    private bool isCaptchaSolved;
 
     public class CaptchaPiece
     {
@@ -69,7 +67,6 @@
             new() { Id = 4, Url = "/captcha/4.png" }
         };
 
-        // Перемешиваем фрагменты
         var rnd = new Random();
         pieces = original.OrderBy(_ => rnd.Next()).ToList();
     }
@@ -78,24 +75,11 @@
     {
         if (isCaptchaSolved) return;
 
-        if (selectedPieces.Contains(piece))
-            selectedPieces.Remove(piece);
-        else
+        if (!selectedPieces.Remove(piece))
             selectedPieces.Add(piece);
-
         if (selectedPieces.Count == 4)
         {
-            bool correct = true;
-            for (int i = 0; i < 4; i++)
-            {
-                if (selectedPieces[i].Id != i + 1)
-                {
-                    correct = false;
-                    break;
-                }
-            }
-
-            if (correct)
+            if (selectedPieces.Select(p => p.Id).SequenceEqual(new[] { 1, 2, 3, 4 }))
             {
                 isCaptchaSolved = true;
                 errorMessage = null;
@@ -107,7 +91,6 @@
             }
         }
     }
-
     private async Task HandleLogin()
     {
         errorMessage = null;
@@ -117,13 +100,6 @@
             errorMessage = "Пожалуйста, сначала соберите пазл.";
             return;
         }
-
-        if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
-        {
-            errorMessage = "Заполните все поля.";
-            return;
-        }
-
         var result = await AuthService.LoginAsync(login, password);
 
         if (!result.Success)
@@ -133,9 +109,6 @@
         }
 
         var encoded = Uri.EscapeDataString(login!);
-        if (result.Role == "Admin")
-            Navigation.NavigateTo($"/admin?login={encoded}", forceLoad: true);
-        else
-            Navigation.NavigateTo($"/bookings?login={encoded}", forceLoad: true);
+        Nav.NavigateTo(result.Role == "Admin" ? $"/admin?login={encoded}" : $"/bookings?login={encoded}", forceLoad: true);
     }
 }
