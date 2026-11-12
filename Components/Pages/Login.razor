@@ -1,0 +1,141 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@using hotel.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<h3>Авторизация</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="mb-3">
+            <label class="form-label">Логин:</label>
+            <input type="text" class="form-control" @bind="login" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Пароль:</label>
+            <input type="password" class="form-control" @bind="password" />
+        </div>
+        <button class="btn btn-primary" @onclick="HandleLogin">Войти</button>
+    </div>
+
+    <div class="col-md-7">
+        <p>Соберите пазл: нажмите фрагменты в порядке <b>1 → 2 → 3 → 4</b>.</p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; width:220px; height:220px; gap:2px;">
+            @foreach (var piece in pieces)
+            {
+                <img src="@piece.Url"
+                     @onclick="() => SelectPiece(piece)"
+                     style="width:100%; height:100%; cursor:pointer;
+                            border:4px solid @(selectedPieces.Contains(piece) ? "green" : "transparent");" />
+            }
+        </div>
+
+        @if (isCaptchaSolved)
+        {
+            <span class="text-success fw-bold">✔ Капча пройдена</span>
+        }
+    </div>
+</div>
+
+@code {
+    private string? login;
+    private string? password;
+    private string? errorMessage;
+    private bool isCaptchaSolved = false;
+
+    public class CaptchaPiece
+    {
+        public int Id { get; set; }
+        public string Url { get; set; } = "";
+    }
+
+    private List<CaptchaPiece> pieces = new();
+    private List<CaptchaPiece> selectedPieces = new();
+
+    protected override void OnInitialized()
+    {
+        var original = new List<CaptchaPiece>
+        {
+            new() { Id = 1, Url = "/captcha/1.png" },
+            new() { Id = 2, Url = "/captcha/2.png" },
+            new() { Id = 3, Url = "/captcha/3.png" },
+            new() { Id = 4, Url = "/captcha/4.png" }
+        };
+
+        // Перемешиваем фрагменты
+        var rnd = new Random();
+        pieces = original.OrderBy(_ => rnd.Next()).ToList();
+    }
+
+    private void SelectPiece(CaptchaPiece piece)
+    {
+        if (isCaptchaSolved) return;
+
+        if (selectedPieces.Contains(piece))
+            selectedPieces.Remove(piece);
+        else
+            selectedPieces.Add(piece);
+
+        if (selectedPieces.Count == 4)
+        {
+            bool correct = true;
+            for (int i = 0; i < 4; i++)
+            {
+                if (selectedPieces[i].Id != i + 1)
+                {
+                    correct = false;
+                    break;
+                }
+            }
+
+            if (correct)
+            {
+                isCaptchaSolved = true;
+                errorMessage = null;
+            }
+            else
+            {
+                selectedPieces.Clear();
+                errorMessage = "Пазл собран неверно. Попробуйте снова.";
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+
+        if (!isCaptchaSolved)
+        {
+            errorMessage = "Пожалуйста, сначала соберите пазл.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Заполните все поля.";
+            return;
+        }
+
+        var result = await AuthService.LoginAsync(login, password);
+
+        if (!result.Success)
+        {
+            errorMessage = result.Message;
+            return;
+        }
+
+        var encoded = Uri.EscapeDataString(login!);
+        if (result.Role == "Admin")
+            Navigation.NavigateTo($"/admin?login={encoded}", forceLoad: true);
+        else
+            Navigation.NavigateTo($"/bookings?login={encoded}", forceLoad: true);
+    }
+}

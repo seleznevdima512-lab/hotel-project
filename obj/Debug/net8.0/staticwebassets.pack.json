@@ -1,0 +1,57 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\db\\hotel\\hotel\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\hotel.bundle.scp.css",
+      "PackagePath": "staticwebassets\\hotel.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\captcha\\1.png",
+      "PackagePath": "staticwebassets\\captcha\\1.png"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\captcha\\2.png",
+      "PackagePath": "staticwebassets\\captcha\\2.png"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\captcha\\3.png",
+      "PackagePath": "staticwebassets\\captcha\\3.png"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\captcha\\4.png",
+      "PackagePath": "staticwebassets\\captcha\\4.png"
+    },
+    {
+      "Id": "C:\\db\\hotel\\hotel\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.hotel.props",
+      "PackagePath": "build\\hotel.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.hotel.props",
+      "PackagePath": "buildMultiTargeting\\hotel.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.hotel.props",
+      "PackagePath": "buildTransitive\\hotel.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.hotel.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

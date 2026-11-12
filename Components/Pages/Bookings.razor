@@ -1,0 +1,81 @@
+﻿@page "/bookings"
+@rendermode InteractiveServer
+@using hotel.Data
+@using hotel.Models
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject NavigationManager Navigation
+
+<h3>Список бронирований</h3>
+
+@if (!isAuthorized)
+{
+    <div class="alert alert-danger">Войдите в систему.</div>
+    <button class="btn btn-primary" @onclick="GoToLogin">На страницу входа</button>
+}
+else
+{
+    @if (bookings == null || !bookings.Any())
+    {
+        <div class="alert alert-warning">Данных нет</div>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Номер брони</th>
+                    <th>Дата заявки</th>
+                    <th>Контактное лицо</th>
+                    <th>Организация (ID)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in bookings)
+                {
+                    <tr>
+                        <td>@b.BookingNo</td>
+                        <td>@b.ApplicationDate.ToString("dd.MM.yyyy")</td>
+                        <td>@b.Person</td>
+                        <td>@b.OrganizationCard</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <button class="btn btn-secondary" @onclick="Logout">Выйти</button>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Login { get; set; }
+
+    private bool isAuthorized = false;
+    private List<Booking>? bookings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(Login))
+        {
+            isAuthorized = false;
+            return;
+        }
+
+        var user = await Db.Users.FirstOrDefaultAsync(u => u.Login == Login);
+        isAuthorized = user != null && user.IsBlocked == 0;
+
+        if (isAuthorized)
+            bookings = await Db.Bookings.ToListAsync();
+    }
+
+    private void GoToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+    private void Logout()
+    {
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}
